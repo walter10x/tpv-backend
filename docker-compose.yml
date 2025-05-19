@@ -1,6 +1,8 @@
 services:
-  orders-microservice:
-    build: .
+  orders-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: orders-microservice
     restart: unless-stopped
     ports:
@@ -8,12 +10,34 @@ services:
     environment:
       - NODE_ENV=development
       - MONGODB_URI=mongodb://mongodb:27017/orders-db
-      - JWT_SECRET=your_jwt_secret_here
-    networks:
-      - tpv-network
+    env_file:
+      - .env
+    volumes:
+      - ./src:/usr/src/app/src
+      - ./package.json:/usr/src/app/package.json
+      - ./node_modules:/usr/src/app/node_modules  
+      - ./:/usr/src/app
     depends_on:
       - mongodb
+    networks:
+      - my-custom-network
+    working_dir: /usr/src/app 
+    command: node node_modules/.bin/nest start --watch
+
+  mongodb:
+    image: mongo:latest
+    container_name: orders-mongodb
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb-orders-data:/data/db
+    networks:
+      - my-custom-network
 
 networks:
-  tpv-network:
+  my-custom-network:
     external: true
+
+volumes:
+  mongodb-orders-data:
